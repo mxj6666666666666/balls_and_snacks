@@ -23,7 +23,29 @@ app.use(express.urlencoded({extended:true}));
 app.use('/uploads',express.static('uploads'));
 
 //数据库连接
-mongoose.connect(process.env.MONGODB_URL||'mongodb://localhost:27017/game-platform',{
-	useNewUrlParser:true,
-	useUnifiedTopology:true,
+mongoose.connect(process.env.MONGODB_URI||'mongodb://localhost:27017/game-platform');
+
+//Socket.io 连接处理
+io.on('connection',(socket)=>{
+	console.log('用户连接:',socket.id);
+
+	socket.on('disconnect',()=>{
+		console.log('用户断开连接:',socket.id);
+	});
+});
+
+//路由
+app.use('/api/auth',require('./routes/auth'));
+app.use('/api/users',require('./routes/users'));
+app.use('/api/games',require('./routes/games'));
+
+//错误处理中间件
+app.use((err,req,res,next)=>{
+	console.error(err.stack);
+	res.status(500).json({message:'服务器内部错误'});
+});
+
+const PORT = process.env.PORT ||3000;
+server.listen(PORT,()=>{
+	console.log(`服务器运行在端口 ${PORT}`);
 });
