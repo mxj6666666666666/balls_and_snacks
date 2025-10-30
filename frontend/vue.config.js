@@ -9,7 +9,7 @@ module.exports = defineConfig({
 			changeOrigin:true,
 			ws:true
 		},
-		'/socket.ioo':{
+		'/socket.io':{
 			target:'http://localhost:3000',
 			changeOrigin:true,
 			ws:true

@@ -26,8 +26,8 @@ const userSchema = new mongoose.Schema({
 		default: 0
 	},
 	avatar:{
-		type: Date,
-		default: Date.now
+		type: String,
+		default: ''
 	}
 },{
 	timestamps: true
@@ -42,7 +42,7 @@ userSchema.pre('save',async function(next){
 
 //密码验证方法
 userSchema.methods.correctPassword = async function(candidatePassword,userPassword){
-	return await bcrypt.conpare(candidatePassword,userPassword);
+	return await bcrypt.compare(candidatePassword,userPassword);
 };
 
 module.exports = mongoose.model('User',userSchema);

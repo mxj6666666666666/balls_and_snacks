@@ -22,8 +22,14 @@ app.use(express.urlencoded({extended:true}));
 //静态文件服务
 app.use('/uploads',express.static('uploads'));
 
-//数据库连接
-mongoose.connect(process.env.MONGODB_URI||'mongodb://localhost:27017/game-platform');
+//数据库连接（带错误处理）
+mongoose.connect(process.env.MONGODB_URI||'mongodb://localhost:27017/game-platform', {
+  serverSelectionTimeoutMS: 5000
+}).then(() => {
+  console.log('MongoDB 连接成功');
+}).catch(err => {
+  console.log('MongoDB 连接失败，但服务器继续运行:', err.message);
+});
 
 //Socket.io 连接处理
 io.on('connection',(socket)=>{
@@ -34,10 +40,33 @@ io.on('connection',(socket)=>{
 	});
 });
 
+//测试路由（无需数据库）
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: '后端API工作正常！',
+    timestamp: new Date().toISOString(),
+    status: 'success'
+  });
+});
+
+app.post('/api/test/echo', (req, res) => {
+  res.json({
+    message: '收到数据',
+    data: req.body,
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    serverTime: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 //路由
 app.use('/api/auth',require('./routes/auth'));
-app.use('/api/users',require('./routes/users'));
-app.use('/api/games',require('./routes/games'));
 
 //错误处理中间件
 app.use((err,req,res,next)=>{
@@ -45,7 +74,27 @@ app.use((err,req,res,next)=>{
 	res.status(500).json({message:'服务器内部错误'});
 });
 
+// 404 处理（修复路径语法）
+app.use((req, res) => {
+  res.status(404).json({
+    message: '路由不存在',
+    path: req.originalUrl,
+    method: req.method
+  });
+});
+
 const PORT = process.env.PORT ||3000;
 server.listen(PORT,()=>{
 	console.log(`服务器运行在端口 ${PORT}`);
+});
+
+// 优雅关闭处理
+process.on('uncaughtException', (err) => {
+  console.error('未捕获的异常:', err);
+  // 服务器继续运行
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('未处理的 Promise 拒绝:', reason);
+  // 服务器继续运行
 });
